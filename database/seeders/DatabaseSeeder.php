@@ -23,7 +23,8 @@ class DatabaseSeeder extends Seeder
         Order::factory(15)->create();
 
         $this->call([
-            StockSeeder::class
+            StockSeeder::class,
+            OrderItemSeeder::class
         ]);
 //        User::factory()->create([
 //            'name' => 'Test User',

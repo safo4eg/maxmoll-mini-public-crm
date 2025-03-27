@@ -2,35 +2,35 @@
 
 namespace Database\Seeders;
 
-use App\Models\Stock;
-use App\Models\Warehouse;
+use App\Models\OrderItem;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-class StockSeeder extends Seeder
+class OrderItemSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $warehouseIds = DB::table('warehouses')->pluck('id');
+        $orderIds = DB::table('orders')->pluck('id');
         $insertingData = [];
-        foreach ($warehouseIds as $warehouseId) {
+        foreach ($orderIds as $orderId) {
             $productIds = DB::table('products')
                 ->inRandomOrder()
                 ->limit(fake()->numberBetween(1, 9))
                 ->pluck('id');
             foreach ($productIds as $productId) {
                 $insertingData[] = [
+                    'order_id' => $orderId,
                     'product_id' => $productId,
-                    'warehouse_id' => $warehouseId,
-                    'stock' => fake()->numberBetween(1, 9)
+                    'count' => fake()->numberBetween(1, 9)
                 ];
             }
         }
-
-        Stock::create($insertingData);
+        Log::channel('single')->info($insertingData);
+        OrderItem::create($insertingData);
     }
 }
