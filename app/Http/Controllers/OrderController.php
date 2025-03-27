@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Filters\AbstractFilter;
 use App\Filters\OrderFilter;
+use App\Http\Requests\StoreOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -28,9 +30,11 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreOrderRequest $request, OrderService $orderService)
     {
-        //
+        $attributes = $request->validated();
+        $orderService->createOrder($attributes);
+        return response()->json([], 201);
     }
 
     /**

@@ -30,6 +30,24 @@ class AppServiceProvider extends ServiceProvider
                 concrete: fn(Application $app) => new $namespace(request()->query->all())
             );
         }
+
+        /*
+         * Биндим все сервисы
+         */
+
+        foreach (glob(app_path('Services') . '/*Service.php') as $filename) {
+            $namespace = 'App\\Services\\' . basename($filename, '.php');
+            $reflection = new \ReflectionClass($namespace);
+
+            if($reflection->isAbstract()) continue;
+            if($reflection->isInterface()) continue;
+            if($reflection->isTrait()) continue;
+
+            $this->app->bind(
+                abstract: $namespace,
+                concrete: fn(Application $app) => new $namespace()
+            );
+        }
     }
 
     /**
