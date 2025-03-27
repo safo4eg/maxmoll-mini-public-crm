@@ -60,6 +60,21 @@ class OrderService
         }
     }
 
+    public function complete(Order $order)
+    {
+
+    }
+
+    public function cancel(Order $order)
+    {
+
+    }
+
+    public function resume(Order $order)
+    {
+
+    }
+
     private function getProductsArray(array $inputProducts, int $orderId): array
     {
         $products = [];

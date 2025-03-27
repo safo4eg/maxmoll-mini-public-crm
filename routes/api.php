@@ -13,6 +13,14 @@ Route::get('/user', function (Request $request) {
 // orders
 Route::resource('orders', OrderController::class)
     ->only(['index', 'store', 'update']);
+Route::name('orders.')->prefix('orders')->group(function () {
+    Route::patch('/{order}/complete', [OrderController::class, 'complete'])
+        ->name('complete');
+    Route::patch('/{order}/cancel', [OrderController::class, 'cancel'])
+        ->name('cancel');
+    Route::patch('/{order}/resume', [OrderController::class, 'resume'])
+        ->name('resume');
+});
 
 // product
 Route::resource('products', ProductController::class)

@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Filters\AbstractFilter;
 use App\Filters\OrderFilter;
+use App\Http\Requests\CancelOrderRequest;
+use App\Http\Requests\CompleteOrderRequest;
+use App\Http\Requests\ResumeOrderRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Resources\OrderResource;
@@ -46,6 +49,21 @@ class OrderController extends Controller
         $attributes = $request->validated();
         $orderService->updateOrder($attributes, $order);
         return response()->json([], 204);
+    }
+
+    public function complete(CompleteOrderRequest $request, Order $order, OrderService $orderService)
+    {
+
+    }
+
+    public function cancel(CancelOrderRequest $request, Order $order, OrderService $orderService)
+    {
+
+    }
+
+    public function resume(ResumeOrderRequest $request, Order $order, OrderService $orderService)
+    {
+
     }
 
 }
