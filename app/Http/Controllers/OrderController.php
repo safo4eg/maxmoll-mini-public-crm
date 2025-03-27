@@ -53,8 +53,7 @@ class OrderController extends Controller
 
     public function complete(Order $order, OrderService $orderService)
     {
-        // если зашло сюда, значит валидацию прошло
-        $data = $orderService->complete($order);
+            $data = $orderService->complete($order);
         if($data['status']) {
             return response()->json([], 204);
         } else {
@@ -69,7 +68,17 @@ class OrderController extends Controller
 
     public function cancel(Order $order, OrderService $orderService)
     {
-
+        $data = $orderService->cancel($order);
+        if($data['status'] === true) {
+            return response()->json([], 204);
+        } else {
+            return response()->json([
+                'message' => $data['message'],
+                'errors' => [
+                    'complete' => $data['message']
+                ]
+            ], 400);
+        }
     }
 
     public function resume(Order $order, OrderService $orderService)

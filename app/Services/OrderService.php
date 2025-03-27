@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Enums\OrderStatusEnum;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Stock;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Class OrderService
@@ -80,9 +82,37 @@ class OrderService
         return ['status' => true];
     }
 
-    public function cancel(Order $order)
+    public function cancel(Order $order): array
     {
+        Log::channel('single')->debug('tut1');
+        if($order->status === OrderStatusEnum::COMPLETED->value) {
+            return [
+                'status' => false,
+                'message' => 'Невозможно сменить статус с completed на canceled'
+            ];
+        }
 
+        DB::beginTransaction();
+        try {
+            // получаем идентификаторы и количество всех товаров заказа
+            $orderItems = OrderItem::where('order_id', $order->id)->get();
+
+            // прибавляем остаток на складе с которого был заказ
+            foreach ($orderItems as $orderItem) {
+                Stock::where('product_id', $orderItem->product_id)
+                    ->where('warehouse_id', $order->warehouse_id)
+                    ->increment('stock', $orderItem->count);
+            }
+            $order->update(['status' => OrderStatusEnum::CANCELED->value]);
+
+            DB::commit();
+
+            return ['status' => true];
+        } catch (\Throwable $e) {
+            Log::channel('single')->debug('tut5');
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     public function resume(Order $order)
