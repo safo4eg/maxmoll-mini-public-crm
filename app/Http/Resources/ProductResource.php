@@ -18,7 +18,8 @@ class ProductResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'price' => $this->price,
-            'warehouses' => WarehouseResource::collection($this->warehouses)
+            'warehouses' => WarehouseResource::collection($this->whenLoaded('warehouses')),
+            'count' => $this->when($this->order, $this->order?->count)
         ];
     }
 }

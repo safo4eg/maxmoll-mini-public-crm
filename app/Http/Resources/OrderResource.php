@@ -20,7 +20,8 @@ class OrderResource extends JsonResource
             'completed_at' => $this->completed_at,
             'warehouse' => new WarehouseResource($this->whenLoaded('warehouse')),
             'customer' => $this->customer,
-            'status' => $this->status
+            'status' => $this->status,
+            'products' => ProductResource::collection($this->whenLoaded('products'))
         ];
     }
 }

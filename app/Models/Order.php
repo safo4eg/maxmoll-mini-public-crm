@@ -6,6 +6,7 @@ use App\Models\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Order extends Model
 {
@@ -20,5 +21,18 @@ class Order extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id', 'id');
+    }
+
+    public function products(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            related: Product::class,
+            table: 'order_items',
+            foreignPivotKey: 'order_id',
+            relatedPivotKey: 'product_id',
+        )
+            ->as('order')
+            ->withPivot('count')
+            ->using(OrderItem::class);
     }
 }

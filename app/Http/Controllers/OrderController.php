@@ -16,10 +16,13 @@ class OrderController extends Controller
      */
     public function index(OrderFilter $filter)
     {
-        Order::filter($filter);
+        // делаем фильтрация
+        // пагинация по 15 если не указан query-параметр ?per_page={count}
+        // так же можно менять страницы с дефолтного ?page={pageNumber}
+        $orders = Order::filter($filter)
+            ->paginate(\request()->input('per_page', 15));
 
-//        $orders = Order::with('warehouse')->get();
-//        return OrderResource::collection($orders);
+        return OrderResource::collection($orders);
     }
 
     /**
