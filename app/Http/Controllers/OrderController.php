@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\OrderResource;
+use App\Models\Order;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Получить список заказов
      */
     public function index()
     {
-
+        $orders = Order::with('warehouse')->get();
+        return OrderResource::collection($orders);
     }
 
     /**
