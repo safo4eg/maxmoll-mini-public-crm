@@ -83,7 +83,17 @@ class OrderController extends Controller
 
     public function resume(Order $order, OrderService $orderService)
     {
-
+        $data = $orderService->resume($order);
+        if($data['status'] === true) {
+            return response()->json([], 204);
+        } else {
+            return response()->json([
+                'message' => $data['message'],
+                'errors' => [
+                    'complete' => $data['message']
+                ]
+            ], 400);
+        }
     }
 
 }

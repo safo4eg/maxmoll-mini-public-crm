@@ -84,17 +84,23 @@ class OrderService
 
     public function cancel(Order $order): array
     {
-        Log::channel('single')->debug('tut1');
-        if($order->status === OrderStatusEnum::COMPLETED->value) {
-            return [
-                'status' => false,
-                'message' => 'Невозможно сменить статус с completed на canceled'
-            ];
+        // если заказ завершен, то не можем отменить
+        // если заказ отменен успех и ретерн, чтоб stock не обновлял
+        switch ($order->status) {
+            case OrderStatusEnum::COMPLETED->value:
+                return [
+                    'status' => false,
+                    'message' => 'Невозможно сменить статус с completed на canceled'
+                ];
+                break;
+            case OrderStatusEnum::CANCELED->value:
+                return ['status' => true];
+                break;
         }
 
         DB::beginTransaction();
         try {
-            // получаем идентификаторы и количество всех товаров заказа
+            // получаем все итемы заказа
             $orderItems = OrderItem::where('order_id', $order->id)->get();
 
             // прибавляем остаток на складе с которого был заказ
@@ -115,9 +121,60 @@ class OrderService
         }
     }
 
-    public function resume(Order $order)
+    public function resume(Order $order): array
     {
+        // если заказ завершен, то не можем возобновить
+        // если заказ активный,то успех и return, чтоб stock не обновлялся
+        switch ($order->status) {
+            case OrderStatusEnum::COMPLETED->value:
+                return [
+                    'status' => false,
+                    'message' => 'Невозможно сменить статус с completed на active'
+                ];
+                break;
+            case OrderStatusEnum::ACTIVE->value:
+                return ['status' => true];
+                break;
+        }
 
+        DB::beginTransaction();
+        try {
+            // получаем все итемы заказа
+            $orderItems = OrderItem::where('order_id', $order->id)->get();
+
+            // тк возобновление => убавляем с остатков
+            foreach ($orderItems as $orderItem) {
+                // получаем остаток товара (итема ордера) по очереди
+                $stock = Stock::where('product_id', $orderItem->product_id)
+                    ->where('warehouse_id', $order->warehouse_id)
+                    ->first();
+
+                // если остаток меньше количества => ошибка, тк отрицательное получится
+                if($stock->stock < $orderItem->count) {
+                    return [
+                        'status' => false,
+                        'message' => "Недостаточное количество товара с id={$stock->product_id}"
+                    ];
+                } else {
+                    // обновляем через построитель запросов
+                    // тк элокуент $stock->update() некорректно обновляет из-за составного ключа
+                    // можно какую-нибудь либу поставить для работы, но мне лень
+                    DB::table('stocks')
+                        ->where('product_id', $stock->product_id)
+                        ->where('warehouse_id', $stock->warehouse_id)
+                        ->update(['stock' => $stock->stock - $orderItem->count]);
+                }
+            }
+
+            $order->update(['status' => OrderStatusEnum::ACTIVE->value]);
+
+            DB::commit();
+
+            return ['status' => true];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     private function getProductsArray(array $inputProducts, int $orderId): array
