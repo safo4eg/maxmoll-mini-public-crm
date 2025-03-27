@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -19,6 +20,7 @@ class DatabaseSeeder extends Seeder
 
         Product::factory(20)->create();
         Warehouse::factory(5)->create();
+        Order::factory(15)->create();
 
         $this->call([
             StockSeeder::class
