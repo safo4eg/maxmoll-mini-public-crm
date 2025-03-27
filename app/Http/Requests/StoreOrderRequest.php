@@ -28,7 +28,7 @@ class StoreOrderRequest extends FormRequest
             'warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
             'status' => ['required', 'string', 'max:255', Rule::in(OrderStatusEnum::getValues())],
             'products' => ['required', 'array'],
-            'products.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
+            'products.*.id' => ['required', 'integer', 'distinct', 'exists:products,id'],
             'products.*.count' => ['required', 'integer', 'min:1'],
         ];
     }

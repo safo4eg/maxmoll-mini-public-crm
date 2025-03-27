@@ -31,7 +31,11 @@ class OrderService
 
             $products = [];
             foreach ($data['products'] as $product) {
-                $products[] = array_merge($product, ['order_id' => $order->id]);
+                $attributes = [
+                    'product_id' => $product['id'],
+                    'count' => $product['count']
+                ];
+                $products[] = array_merge($attributes, ['order_id' => $order->id]);
             }
 
             OrderItem::create($products);
@@ -41,5 +45,10 @@ class OrderService
             DB::rollBack();
             throw $e;
         }
+    }
+
+    public function updateOrder(mixed $data, Order $order)
+    {
+
     }
 }
