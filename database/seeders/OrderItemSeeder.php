@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\OrderItem;
+use App\Models\Product;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +19,7 @@ class OrderItemSeeder extends Seeder
         $orderIds = DB::table('orders')->pluck('id');
         $insertingData = [];
         foreach ($orderIds as $orderId) {
-            $productIds = DB::table('products')
-                ->inRandomOrder()
+            $productIds = Product::inRandomOrder()
                 ->limit(fake()->numberBetween(1, 9))
                 ->pluck('id');
             foreach ($productIds as $productId) {
@@ -30,7 +30,6 @@ class OrderItemSeeder extends Seeder
                 ];
             }
         }
-        Log::channel('single')->info($insertingData);
         OrderItem::create($insertingData);
     }
 }
