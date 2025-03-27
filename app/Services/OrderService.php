@@ -29,16 +29,7 @@ class OrderService
                 'status' => $data['status'],
             ]);
 
-            $products = [];
-            foreach ($data['products'] as $product) {
-                $attributes = [
-                    'product_id' => $product['id'],
-                    'count' => $product['count']
-                ];
-                $products[] = array_merge($attributes, ['order_id' => $order->id]);
-            }
-
-            OrderItem::create($products);
+            OrderItem::create($this->getProductsArray($data['products'], $order->id));
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -49,6 +40,36 @@ class OrderService
 
     public function updateOrder(mixed $data, Order $order)
     {
+        DB::beginTransaction();
+        try {
 
+            if(isset($data['customer'])) {
+                Order::where('id', $order->id)
+                    ->update(['customer' => $data['customer']]);
+            }
+
+            if(isset($data['products'])) {
+                OrderItem::where('order_id', $order->id)->delete();
+                OrderItem::create($this->getProductsArray($data['products'], $order->id));
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    private function getProductsArray(array $inputProducts, int $orderId): array
+    {
+        $products = [];
+        foreach ($inputProducts as $product) {
+            $attributes = [
+                'product_id' => $product['id'],
+                'count' => $product['count']
+            ];
+            $products[] = array_merge($attributes, ['order_id' => $orderId]);
+        }
+        return $products;
     }
 }

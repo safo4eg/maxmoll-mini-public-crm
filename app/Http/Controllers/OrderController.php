@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Filters\AbstractFilter;
 use App\Filters\OrderFilter;
 use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Services\OrderService;
@@ -40,9 +41,11 @@ class OrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateOrderRequest $request, Order $order, OrderService $orderService)
     {
-        //
+        $attributes = $request->validated();
+        $orderService->updateOrder($attributes, $order);
+        return response()->json([], 204);
     }
 
 }
