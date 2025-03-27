@@ -24,6 +24,34 @@ services:
     restart: unless-stopped
     networks:
       - maxmoll_network
+  mysql:
+    container_name: maxmoll_mysql
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-maxmoll}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - maxmoll_network
+  phpmyadmin:
+    container_name: maxmoll_phpmyadmin
+    image: phpmyadmin
+    ports:
+      - "33060:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    networks:
+      - maxmoll_network
+
+volumes:
+  mysql_data:
+    name: volume_maxmoll_mysql_data
 
 networks:
   maxmoll_network:
