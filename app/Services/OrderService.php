@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\OrderStatusEnum;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
@@ -60,9 +61,23 @@ class OrderService
         }
     }
 
-    public function complete(Order $order)
+    /**
+     * Меняем статус на completed
+     * @param Order $order
+     * @return array response
+     */
+    public function complete(Order $order): array
     {
+        if($order->status === OrderStatusEnum::CANCELED->value) {
+            return [
+                'status' => false,
+                'message' => 'Невозможно сменить статус с canceled на completed'
+            ];
+        }
 
+        $order->update(['status' => OrderStatusEnum::COMPLETED]);
+
+        return ['status' => true];
     }
 
     public function cancel(Order $order)
