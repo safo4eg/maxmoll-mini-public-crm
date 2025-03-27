@@ -2,11 +2,10 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class WarehouseResource extends JsonResource
+class ProductResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,7 +17,8 @@ class WarehouseResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'stock' => $this->when($this->stock, $this->stock?->stock)
+            'price' => $this->price,
+            'warehouses' => WarehouseResource::collection($this->warehouses)
         ];
     }
 }

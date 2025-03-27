@@ -15,7 +15,8 @@ Route::resource('orders', OrderController::class)
     ->only(['index', 'store', 'update']);
 
 // product
-Route::resource('products', ProductController::class);
+Route::resource('products', ProductController::class)
+    ->only(['index']);
 
 // warehouse
 Route::resource('warehouses', WarehouseController::class);
