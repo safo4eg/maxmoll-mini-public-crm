@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
         Product::factory(20)->create();
         Warehouse::factory(5)->create();
 
+        $this->call([
+            StockSeeder::class
+        ]);
 //        User::factory()->create([
 //            'name' => 'Test User',
 //            'email' => 'test@example.com',
