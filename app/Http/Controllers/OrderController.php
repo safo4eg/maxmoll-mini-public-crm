@@ -2,17 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\StockErrorCodeEnum;
-use App\Exceptions\StockManipulationException;
-use App\Filters\AbstractFilter;
 use App\Filters\OrderFilter;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Services\OrderService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {

@@ -5,6 +5,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\WarehouseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use \App\Http\Controllers\StockMoveController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -28,3 +29,7 @@ Route::resource('products', ProductController::class)
 
 // warehouse
 Route::resource('warehouses', WarehouseController::class);
+
+// история остатков
+Route::get('/stock_moves', [StockMoveController::class, 'index'])
+    ->name('stock_move.index');
