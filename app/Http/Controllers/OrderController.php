@@ -52,32 +52,14 @@ class OrderController extends Controller
 
     public function complete(Order $order, OrderService $orderService)
     {
-            $data = $orderService->complete($order);
-        if($data['status']) {
-            return response()->json([], 204);
-        } else {
-            return response()->json([
-                'message' => $data['message'],
-                'errors' => [
-                    'complete' => $data['message']
-                ]
-            ], 400);
-        }
+        $orderService->complete($order);
+        return response()->json([], 204);
     }
 
     public function cancel(Order $order, OrderService $orderService)
     {
-        $data = $orderService->cancel($order);
-        if($data['status'] === true) {
-            return response()->json([], 204);
-        } else {
-            return response()->json([
-                'message' => $data['message'],
-                'errors' => [
-                    'complete' => $data['message']
-                ]
-            ], 400);
-        }
+        $orderService->cancel($order);
+        return response()->json([], 204);
     }
 
     public function resume(Order $order, OrderService $orderService)
