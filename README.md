@@ -52,4 +52,4 @@
 
 ## Необходимые ресурсы
 
-1. [коллекция Postman](https://web.postman.co/workspace/97400a92-93e0-4cc5-8b4b-a57010cf5c13/documentation/35026712-aca21b06-6e1d-4e49-b099-c54bad838d05)
+1. [коллекция Postman](https://galactic-capsule-549603.postman.co/workspace/My-Workspace~97400a92-93e0-4cc5-8b4b-a57010cf5c13/collection/35026712-aca21b06-6e1d-4e49-b099-c54bad838d05?action=share&creator=35026712&active-environment=35026712-4e703a65-f226-4693-8b45-c1e6b855e7dd)
