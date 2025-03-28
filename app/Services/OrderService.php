@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\DTO\OperationDTO;
 use App\Enums\OrderStatusEnum;
 use App\Enums\StockErrorCodeEnum;
 use App\Exceptions\StockManipulationException;
@@ -10,7 +9,6 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Stock;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Class OrderService
@@ -65,7 +63,37 @@ class OrderService
             }
 
             if(isset($data['products'])) {
+                foreach ($data['products'] as $product) {
+                    $productExists = Stock::where('warehouse_id', $order->warehouse_id)
+                        ->where('product_id', $product['id'])
+                        ->exists();
+
+                    if(!$productExists) {
+                        throw new StockManipulationException(
+                            message: 'Товар не связан со складом',
+                            productId: $product['id'],
+                            code: StockErrorCodeEnum::PRODUCT_NOT_FOUND_ON_WAREHOUSE->value
+                        );
+                    }
+                }
+
+                // перед удалением делаем инкремент для текущих
+                $products = $order->products;
+                foreach ($products as $product) {
+                    Stock::where('product_id', $product->id)
+                        ->where('warehouse_id', $order->warehouse_id)
+                        ->increment('stock', $product->count->count);
+                }
                 OrderItem::where('order_id', $order->id)->delete();
+
+                // делаем декремент для будущих
+                foreach ($data['products'] as $product) {
+                    $this->decrementStock(
+                        productId: $product['id'],
+                        warehouseId: $order->warehouse_id,
+                        count: $product['count']
+                    );
+                }
                 OrderItem::create($this->getProductsArray($data['products'], $order->id));
             }
 
@@ -95,40 +123,33 @@ class OrderService
         return ['status' => true];
     }
 
-    public function cancel(Order $order): array
+    public function cancel(Order $order)
     {
         // если заказ завершен, то не можем отменить
         // если заказ отменен успех и ретерн, чтоб stock не обновлял
         switch ($order->status) {
             case OrderStatusEnum::COMPLETED->value:
-                return [
-                    'status' => false,
-                    'message' => 'Невозможно сменить статус с completed на canceled'
-                ];
-                break;
+                throw new StockManipulationException('Невозможно сменить статус с completed на canceled');
             case OrderStatusEnum::CANCELED->value:
-                return ['status' => true];
-                break;
+                return;
         }
 
         DB::beginTransaction();
         try {
-            // получаем все итемы заказа
-            $orderItems = OrderItem::where('order_id', $order->id)->get();
-
             // прибавляем остаток на складе с которого был заказ
-            foreach ($orderItems as $orderItem) {
-                Stock::where('product_id', $orderItem->product_id)
+            $products = $order->products;
+            foreach ($products as $product) {
+                Stock::where('product_id', $product->id)
                     ->where('warehouse_id', $order->warehouse_id)
-                    ->increment('stock', $orderItem->count);
+                    ->increment('stock', $product->count->count);
             }
+
             $order->update(['status' => OrderStatusEnum::CANCELED->value]);
 
             DB::commit();
 
             return ['status' => true];
         } catch (\Throwable $e) {
-            Log::channel('single')->debug('tut5');
             DB::rollBack();
             throw $e;
         }
@@ -212,10 +233,9 @@ class OrderService
             ->where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->update(['stock' => $stock->stock - $count]);
-
     }
 
-    private function incrementStock(mixed $orderItems): void
+    private function incrementStock(int $productId, int $warehouseId, int $count): void
     {
 
     }

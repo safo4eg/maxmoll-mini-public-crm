@@ -22,8 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
             if($request->is('api/*')) {
                 $responseArr = ['message' => $e->getMessage()];
 
-                if($e->getCode() === StockErrorCodeEnum::INSUFFICIENT_STOCK->value) {
-                    $responseArr['data'] = ['product_id' => $e->getProductId()];
+                switch ($e->getCode()) {
+                    case StockErrorCodeEnum::INSUFFICIENT_STOCK->value:
+                    case StockErrorCodeEnum::PRODUCT_NOT_FOUND_ON_WAREHOUSE->value:
+                        $responseArr['data'] = ['product_id' => $e->getProductId()];
+                        break;
                 }
 
                 return response()->json($responseArr, 400);
