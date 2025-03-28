@@ -33,6 +33,20 @@ class OrderService
                 'status' => $data['status'],
             ]);
 
+            foreach ($data['products'] as $product) {
+                $productExists = Stock::where('warehouse_id', $order->warehouse_id)
+                    ->where('product_id', $product['id'])
+                    ->exists();
+
+                if(!$productExists) {
+                    throw new StockManipulationException(
+                        message: 'Товар не связан со складом',
+                        productId: $product['id'],
+                        code: StockErrorCodeEnum::PRODUCT_NOT_FOUND_ON_WAREHOUSE->value
+                    );
+                }
+            }
+
             $products = $this->getProductsArray($data['products'], $order->id);
 
             foreach ($products as $product) {
@@ -233,10 +247,5 @@ class OrderService
             ->where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->update(['stock' => $stock->stock - $count]);
-    }
-
-    private function incrementStock(int $productId, int $warehouseId, int $count): void
-    {
-
     }
 }
