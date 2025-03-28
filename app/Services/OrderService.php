@@ -33,6 +33,7 @@ class OrderService
                 'status' => $data['status'],
             ]);
 
+            // проверка связи продукта и склада
             foreach ($data['products'] as $product) {
                 $productExists = Stock::where('warehouse_id', $order->warehouse_id)
                     ->where('product_id', $product['id'])
@@ -49,6 +50,7 @@ class OrderService
 
             $products = $this->getProductsArray($data['products'], $order->id);
 
+            // вычитание из остатков
             foreach ($products as $product) {
                 $this->decrementStock(
                     productId: $product['product_id'],
