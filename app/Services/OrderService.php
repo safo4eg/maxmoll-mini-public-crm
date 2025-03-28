@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\OrderStatusEnum;
 use App\Enums\StockErrorCodeEnum;
+use App\Enums\StockMoveTypeEnum;
+use App\Events\StockMoveEvent;
 use App\Exceptions\StockManipulationException;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -254,6 +256,14 @@ class OrderService
             );
         }
 
+        StockMoveEvent::dispatch(
+            $productId,
+            $warehouseId,
+            StockMoveTypeEnum::DECREMENT->value,
+            $stock->stock,
+            ($stock->stock - $count)
+        );
+
         // обновляем через построитель запросов
         // тк элокуент $stock->update() некорректно обновляет из-за составного ключа
         DB::table('stocks')
@@ -264,8 +274,21 @@ class OrderService
 
     private function incrementStock(int $productId, int $warehouseId, int $count): void
     {
-        Stock::where('product_id', $productId)
+        $stock = Stock::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
-            ->increment('stock', $count);
+            ->first();
+
+        DB::table('stocks')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->update(['stock' => $stock->stock + $count]);
+
+        StockMoveEvent::dispatch(
+            $productId,
+            $warehouseId,
+            StockMoveTypeEnum::INCREMENT->value,
+            $stock->stock,
+            ($stock->stock + $count)
+        );
     }
 }
