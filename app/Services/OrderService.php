@@ -96,9 +96,11 @@ class OrderService
                 // перед удалением делаем инкремент для текущих
                 $products = $order->products;
                 foreach ($products as $product) {
-                    Stock::where('product_id', $product->id)
-                        ->where('warehouse_id', $order->warehouse_id)
-                        ->increment('stock', $product->count->count);
+                    $this->incrementStock(
+                        productId: $product->id,
+                        warehouseId: $order->warehouse_id,
+                        count: $product->count->count
+                    );
                 }
                 OrderItem::where('order_id', $order->id)->delete();
 
@@ -139,6 +141,13 @@ class OrderService
         return ['status' => true];
     }
 
+    /**
+     * Меняем статус на canceled
+     * @param Order $order
+     * @return true[]|void
+     * @throws StockManipulationException
+     * @throws \Throwable
+     */
     public function cancel(Order $order)
     {
         // если заказ завершен, то не можем отменить
@@ -155,9 +164,11 @@ class OrderService
             // прибавляем остаток на складе с которого был заказ
             $products = $order->products;
             foreach ($products as $product) {
-                Stock::where('product_id', $product->id)
-                    ->where('warehouse_id', $order->warehouse_id)
-                    ->increment('stock', $product->count->count);
+                $this->incrementStock(
+                    productId: $product->id,
+                    warehouseId: $order->warehouse_id,
+                    count: $product->count->count
+                );
             }
 
             $order->update(['status' => OrderStatusEnum::CANCELED->value]);
@@ -249,5 +260,12 @@ class OrderService
             ->where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->update(['stock' => $stock->stock - $count]);
+    }
+
+    private function incrementStock(int $productId, int $warehouseId, int $count): void
+    {
+        Stock::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->increment('stock', $count);
     }
 }
