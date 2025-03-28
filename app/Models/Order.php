@@ -31,7 +31,7 @@ class Order extends Model
             foreignPivotKey: 'order_id',
             relatedPivotKey: 'product_id',
         )
-            ->as('order')
+            ->as('count')
             ->withPivot('count')
             ->using(OrderItem::class);
     }

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StockErrorCodeEnum;
+use App\Exceptions\StockManipulationException;
 use App\Filters\AbstractFilter;
 use App\Filters\OrderFilter;
-use App\Http\Requests\CancelOrderRequest;
-use App\Http\Requests\CompleteOrderRequest;
-use App\Http\Requests\ResumeOrderRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Resources\OrderResource;
@@ -83,17 +82,8 @@ class OrderController extends Controller
 
     public function resume(Order $order, OrderService $orderService)
     {
-        $data = $orderService->resume($order);
-        if($data['status'] === true) {
-            return response()->json([], 204);
-        } else {
-            return response()->json([
-                'message' => $data['message'],
-                'errors' => [
-                    'complete' => $data['message']
-                ]
-            ], 400);
-        }
+        $orderService->resume($order);
+        return response()->json([], 204);
     }
 
 }

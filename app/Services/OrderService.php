@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\DTO\OperationDTO;
 use App\Enums\OrderStatusEnum;
+use App\Enums\StockErrorCodeEnum;
+use App\Exceptions\StockManipulationException;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Stock;
@@ -22,7 +25,7 @@ class OrderService
      * @param mixed $data
      * @return mixed
      */
-    public function createOrder(mixed $data): void
+    public function createOrder(mixed $data)
     {
         DB::beginTransaction();
         try {
@@ -32,7 +35,17 @@ class OrderService
                 'status' => $data['status'],
             ]);
 
-            OrderItem::create($this->getProductsArray($data['products'], $order->id));
+            $products = $this->getProductsArray($data['products'], $order->id);
+
+            foreach ($products as $product) {
+                $this->decrementStock(
+                    productId: $product['product_id'],
+                    warehouseId: $data['warehouse_id'],
+                    count: $product['count']
+                );
+            }
+
+            OrderItem::create($products);
 
             DB::commit();
         } catch (\Throwable $e) {
@@ -121,56 +134,30 @@ class OrderService
         }
     }
 
-    public function resume(Order $order): array
+    public function resume(Order $order)
     {
         // если заказ завершен, то не можем возобновить
         // если заказ активный,то успех и return, чтоб stock не обновлялся
         switch ($order->status) {
             case OrderStatusEnum::COMPLETED->value:
-                return [
-                    'status' => false,
-                    'message' => 'Невозможно сменить статус с completed на active'
-                ];
-                break;
+                throw new StockManipulationException('Невозможно сменить статус с completed на active');
             case OrderStatusEnum::ACTIVE->value:
-                return ['status' => true];
-                break;
+                return;
         }
 
         DB::beginTransaction();
         try {
-            // получаем все итемы заказа
-            $orderItems = OrderItem::where('order_id', $order->id)->get();
-
-            // тк возобновление => убавляем с остатков
-            foreach ($orderItems as $orderItem) {
-                // получаем остаток товара (итема ордера) по очереди
-                $stock = Stock::where('product_id', $orderItem->product_id)
-                    ->where('warehouse_id', $order->warehouse_id)
-                    ->first();
-
-                // если остаток меньше количества => ошибка, тк отрицательное получится
-                if($stock->stock < $orderItem->count) {
-                    return [
-                        'status' => false,
-                        'message' => "Недостаточное количество товара с id={$stock->product_id}"
-                    ];
-                } else {
-                    // обновляем через построитель запросов
-                    // тк элокуент $stock->update() некорректно обновляет из-за составного ключа
-                    // можно какую-нибудь либу поставить для работы, но мне лень
-                    DB::table('stocks')
-                        ->where('product_id', $stock->product_id)
-                        ->where('warehouse_id', $stock->warehouse_id)
-                        ->update(['stock' => $stock->stock - $orderItem->count]);
-                }
+            $products = $order->products;
+            foreach ($products as $product) {
+                $this->decrementStock(
+                    productId: $product->id,
+                    warehouseId: $order->warehouse_id,
+                    count: $product->count->count
+                );
             }
 
             $order->update(['status' => OrderStatusEnum::ACTIVE->value]);
-
             DB::commit();
-
-            return ['status' => true];
         } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;
@@ -188,5 +175,48 @@ class OrderService
             $products[] = array_merge($attributes, ['order_id' => $orderId]);
         }
         return $products;
+    }
+
+    /**
+     * Снизить остаток товаров из заказа
+     * @param array $data содержит product_id, warehouse_id, count
+     * @return void
+     * @throws StockManipulationException
+     */
+    private function decrementStock(int $productId, int $warehouseId, int $count): void
+    {
+        $stock = Stock::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->first();
+
+        if(!$stock) {
+            throw new StockManipulationException(
+                message: "Склад не реализует товар",
+                productId: $productId,
+                code: StockErrorCodeEnum::INSUFFICIENT_STOCK->value
+            );
+        }
+
+        // если остаток меньше количества => ошибка, тк отрицательное получится
+        if($stock->stock < $count) {
+            throw new StockManipulationException(
+                message: 'Недостаточное количество товаров',
+                productId: $productId,
+                code: StockErrorCodeEnum::INSUFFICIENT_STOCK->value
+            );
+        }
+
+        // обновляем через построитель запросов
+        // тк элокуент $stock->update() некорректно обновляет из-за составного ключа
+        DB::table('stocks')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->update(['stock' => $stock->stock - $count]);
+
+    }
+
+    private function incrementStock(mixed $orderItems): void
+    {
+
     }
 }
