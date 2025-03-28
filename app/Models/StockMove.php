@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class StockMoves extends Model
+class StockMove extends Model
 {
     const UPDATED_AT = null;
     public $timestamps = true;
